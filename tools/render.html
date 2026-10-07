@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Ink Peaks · gallery render</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+  // Renders a gallery mountain through the app's own pipeline (painter + inscription + mounting)
+  // and shows it at 1:1, for headless screenshots (README images, thumbnails).
+  // tools/render.html?id=huangshan&w=1200&h=2000&format=scroll&mount=0&insc=1&lang=zh[&style=...&comp=...]
+  import { loadTerrarium } from '../js/terrain/dem.js';
+  import { paint } from '../js/paint/render.js';
+  import { compose, FONTS, poemColumns } from '../js/compose.js';
+  import { dateLine } from '../js/i18n.js';
+  const q = new URLSearchParams(location.search);
+  const num = (k, d) => (q.has(k) ? Number(q.get(k)) : d);
+  const gallery = await (await fetch('../data/gallery.json')).json();
+  const g = gallery.find(x => x.id === q.get('id')) || gallery[0];
+  const dem = await loadTerrarium(`../data/dem/${g.id}.png`);
+  dem.mpp = g.mpp;
+  dem.sea = g.sea;
+  const v = g.view;
+  const lang = q.get('lang') || 'zh';
+  const format = q.get('format') || 'scroll';
+  const w = num('w', 1200), h = num('h', 2000);
+  const mk = (W, H) => { const k = document.createElement('canvas'); k.width = W; k.height = H; return k; };
+  const res = paint(dem, {
+    width: w, height: h,
+    style: q.get('style') || v.style || 'ink',
+    composition: q.get('comp') || v.comp || 'shenyuan',
+    azimuth: num('az', v.az ?? 0), zoom: num('zoom', v.zoom ?? 0.92), relief: num('relief', v.relief ?? 1),
+    mist: num('mist', v.mist ?? 0), water: num('water', v.water ?? 0), texture: num('texture', v.texture ?? 1),
+    smooth: num('smooth', v.smooth ?? 0), seed: num('seed', 1),
+  }, mk);
+  const insc = q.get('insc') !== '0';
+  const title = lang === 'zh' ? g.zh : g.en;
+  const opts = {
+    format, mount: q.get('mount') === '1', credit: '', lang,
+    title, date: dateLine(lang), poem: lang === 'zh' ? g.poem : '', seal: '卧游',
+    font: q.get('font') || 'xing', side: insc ? 'auto' : 'none', seed: 1,
+  };
+  if (insc) {
+    const text = [title, opts.date, ...poemColumns(opts.poem)].join('');
+    await Promise.all([document.fonts.load(`400 64px ${FONTS[opts.font]}`, text), document.fonts.load(`400 64px ${FONTS.kai}`, '卧游'),
+      document.fonts.load(`italic 600 48px ${FONTS.latin}`, title), document.fonts.load(`300 24px ${FONTS.latinSmall}`, 'A')]);
+  }
+  const out = compose(res, opts);
+  const c = document.getElementById('c');
+  c.width = out.width; c.height = out.height;
+  c.getContext('2d').drawImage(out, 0, 0);
+  document.title = 'done';
+</script>
+</body>
+</html>

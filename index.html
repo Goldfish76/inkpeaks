@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ink Peaks · 卧游</title>
+  <meta name="description" content="Turn any real mountain into a Chinese landscape painting: real elevation data, painted in ink (水墨), blue-green (青绿), light crimson (浅绛) or snow, as a hanging scroll, handscroll or round fan. Free, open source, runs in your browser. 把地球上真实的山，画成一幅宋画。">
+  <meta property="og:title" content="Ink Peaks · 卧游">
+  <meta property="og:description" content="Real mountains, painted like the Song dynasty. Free and open source.">
+  <meta property="og:image" content="https://goldfish76.github.io/inkpeaks/docs/social-preview.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-zh">卧游</span>
+      <span class="brand-en">Ink Peaks</span>
+    </div>
+    <p class="tagline" data-i18n="tagline"></p>
+    <a class="gh-link" href="https://github.com/Goldfish76/inkpeaks" target="_blank" rel="noopener">★ <span data-i18n="starOnGithub"></span></a>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="zh">中文</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-live="polite">
+      <div class="frame">
+        <canvas id="art" aria-label="Painting"></canvas>
+        <div class="busy" id="busy" hidden><span class="dot"></span><span id="busy-text"></span></div>
+      </div>
+      <p class="stage-note" id="stage-note" hidden></p>
+    </section>
+
+    <aside class="panel">
+      <section>
+        <h2 data-i18n="sectionPlace"></h2>
+        <div class="search">
+          <input id="search" type="text" autocomplete="off" spellcheck="false" data-i18n-ph="searchPlaceholder" aria-label="Search">
+          <ul id="search-menu" class="menu" hidden></ul>
+        </div>
+        <p class="note" data-i18n="searchHint"></p>
+        <div class="place-row">
+          <canvas id="terrain" width="168" height="168" aria-label="Terrain"></canvas>
+          <div class="place-info">
+            <div class="place-name" id="place-name"></div>
+            <div class="place-meta" id="place-meta"></div>
+            <p class="note" data-i18n="standHint"></p>
+            <button id="locate" type="button" class="ghost" data-i18n="useMyLocation"></button>
+          </div>
+        </div>
+        <label class="slider" id="area-row"><span><b data-i18n="area"></b><em id="area-val"></em></span>
+          <input id="area" type="range" min="2" max="25" step="1" value="8"></label>
+        <p class="sublabel" data-i18n="gallery"></p>
+        <div class="gallery" id="gallery"></div>
+      </section>
+
+      <section>
+        <h2 data-i18n="sectionStyle"></h2>
+        <div class="seg seg-4" role="group" id="styles">
+          <button type="button" data-style="ink"><i class="sw sw-ink"></i><span data-i18n="style_ink"></span></button>
+          <button type="button" data-style="qinglu"><i class="sw sw-qinglu"></i><span data-i18n="style_qinglu"></span></button>
+          <button type="button" data-style="qianjiang"><i class="sw sw-qianjiang"></i><span data-i18n="style_qianjiang"></span></button>
+          <button type="button" data-style="snow"><i class="sw sw-snow"></i><span data-i18n="style_snow"></span></button>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="sectionComposition"></h2>
+        <div class="seg seg-3" role="group" id="comps">
+          <button type="button" data-comp="gaoyuan" data-i18n="comp_gaoyuan"></button>
+          <button type="button" data-comp="shenyuan" data-i18n="comp_shenyuan"></button>
+          <button type="button" data-comp="pingyuan" data-i18n="comp_pingyuan"></button>
+        </div>
+        <p class="note" id="comp-note"></p>
+        <label class="slider"><span><b data-i18n="direction"></b><em id="az-val"></em></span>
+          <input id="az" type="range" min="0" max="359" step="1" value="0"></label>
+        <label class="slider"><span><b data-i18n="zoom"></b><em id="zoom-val"></em></span>
+          <input id="zoom" type="range" min="0.35" max="1" step="0.01" value="0.95"></label>
+        <label class="slider"><span><b data-i18n="relief"></b><em id="relief-val"></em></span>
+          <input id="relief" type="range" min="0.5" max="1.5" step="0.01" value="1"></label>
+        <label class="slider"><span><b data-i18n="mist"></b><em id="mist-val"></em></span>
+          <input id="mist" type="range" min="-0.25" max="0.3" step="0.01" value="0"></label>
+        <label class="slider"><span><b data-i18n="water"></b><em id="water-val"></em></span>
+          <input id="water" type="range" min="0" max="0.25" step="0.005" value="0"></label>
+        <label class="slider"><span><b data-i18n="texture"></b><em id="texture-val"></em></span>
+          <input id="texture" type="range" min="0" max="2" step="0.05" value="1"></label>
+        <button id="reroll" type="button" class="ghost wide" data-i18n="reroll"></button>
+      </section>
+
+      <section>
+        <h2 data-i18n="sectionFormat"></h2>
+        <div class="seg seg-5" role="group" id="formats">
+          <button type="button" data-format="scroll" data-i18n="format_scroll"></button>
+          <button type="button" data-format="handscroll" data-i18n="format_handscroll"></button>
+          <button type="button" data-format="square" data-i18n="format_square"></button>
+          <button type="button" data-format="fan" data-i18n="format_fan"></button>
+          <button type="button" data-format="wallpaper" data-i18n="format_wallpaper"></button>
+        </div>
+        <div class="row tight">
+          <label class="check"><input id="mount" type="checkbox" checked><span data-i18n="mount"></span></label>
+          <label class="check"><input id="credit" type="checkbox" checked><span data-i18n="credit"></span></label>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="sectionInscription"></h2>
+        <label><span data-i18n="inscTitle"></span><input id="title" type="text" maxlength="24"></label>
+        <label><span data-i18n="inscPoem"></span><input id="poem" type="text" maxlength="40"></label>
+        <p class="note poem-src" id="poem-src"></p>
+        <div class="row">
+          <label><span data-i18n="inscDate"></span><input id="date" type="text" maxlength="24"></label>
+          <label><span data-i18n="inscSeal"></span><input id="seal" type="text" maxlength="4"></label>
+        </div>
+        <p class="sublabel" data-i18n="inscFont"></p>
+        <div class="seg seg-3" role="group" id="fonts">
+          <button type="button" data-font="kai" data-i18n="font_kai"></button>
+          <button type="button" data-font="xing" data-i18n="font_xing"></button>
+          <button type="button" data-font="cao" data-i18n="font_cao"></button>
+        </div>
+        <p class="sublabel" data-i18n="inscSide"></p>
+        <div class="seg seg-4" role="group" id="sides">
+          <button type="button" data-side="auto" data-i18n="side_auto"></button>
+          <button type="button" data-side="left" data-i18n="side_left"></button>
+          <button type="button" data-side="right" data-i18n="side_right"></button>
+          <button type="button" data-side="none" data-i18n="side_none"></button>
+        </div>
+        <p class="sublabel" data-i18n="inscLang"></p>
+        <div class="seg seg-2" role="group" id="insc-langs">
+          <button type="button" data-insc-lang="zh">中文</button>
+          <button type="button" data-insc-lang="en">English</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="sectionExport"></h2>
+        <p class="sublabel" data-i18n="exportSize"></p>
+        <div class="seg seg-2" role="group" id="sizes">
+          <button type="button" data-size="standard" data-i18n="size_standard"></button>
+          <button type="button" data-size="large" data-i18n="size_large"></button>
+        </div>
+        <button id="export-png" type="button" class="primary" data-i18n="exportPng"></button>
+        <div class="row export-pdf">
+          <select id="page" aria-label="Paper">
+            <option value="a4">A4</option>
+            <option value="a3">A3</option>
+            <option value="letter">Letter</option>
+          </select>
+          <button id="export-pdf" type="button" class="secondary" data-i18n="exportPdf"></button>
+        </div>
+        <button id="share" type="button" class="ghost wide" data-i18n="copyLink"></button>
+      </section>
+
+      <section class="about">
+        <h2 data-i18n="about"></h2>
+        <p data-i18n="aboutText"></p>
+        <p class="credits"><span data-i18n="dataCredit"></span>: <a href="https://mapterhorn.com/attribution" target="_blank" rel="noopener">Mapterhorn</a>, merging Copernicus DEM GLO-30 (© DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA) with national elevation models such as swisstopo, IGN, GSI, USGS, Kartverket and LINZ; fallback AWS Terrain Tiles. <a href="https://github.com/Goldfish76/inkpeaks/blob/main/ATTRIBUTION.md" target="_blank" rel="noopener">ATTRIBUTION</a></p>
+        <p class="credits"><span data-i18n="openSource"></span> · <a href="https://github.com/Goldfish76/inkpeaks" target="_blank" rel="noopener">GitHub</a> · <a href="https://goldfish76.github.io/the-sky-that-night/" target="_blank" rel="noopener">那晚星空 The Sky That Night</a></p>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

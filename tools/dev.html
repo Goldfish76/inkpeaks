@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ink Peaks · dev render</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; }
+  canvas { display: block; }
+  #log { position: fixed; right: 4px; bottom: 4px; font: 11px monospace; color: #c00; background: #fff8; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="log"></div>
+<script type="module">
+  // Development harness: renders one painting at exact pixel size from URL parameters, e.g.
+  // tools/dev.html?dem=data/dem/huangshan.png&mpp=100&w=1200&h=2000&style=ink
+  import { loadTerrarium } from '../js/terrain/dem.js';
+  import { paint } from '../js/paint/render.js';
+  const q = new URLSearchParams(location.search);
+  const num = (k, d) => (q.has(k) ? Number(q.get(k)) : d);
+  const log = m => { document.getElementById('log').textContent = m; };
+  try {
+    const t0 = performance.now();
+    const dem = await loadTerrarium('../' + q.get('dem'));
+    dem.mpp = num('mpp', 30);
+    dem.sea = q.get('sea') === '1';
+    const w = num('w', 1200), h = num('h', 2000);
+    const c = document.getElementById('c');
+    c.width = w; c.height = h;
+    const mk = (W, H) => { const k = document.createElement('canvas'); k.width = W; k.height = H; return k; };
+    const t1 = performance.now();
+    const res = paint(dem, {
+      width: w, height: h,
+      style: q.get('style') || 'ink',
+      composition: q.get('comp') || 'shenyuan',
+      azimuth: num('az', 0), zoom: num('zoom', 0.95), shift: num('shift', 0),
+      relief: num('relief', 1), mist: num('mist', 0), water: num('water', 0),
+      texture: num('texture', 1), detail: num('detail', 0.004), smooth: num('smooth', 0),
+      pines: q.has('pines') ? num('pines', 5) : undefined, seed: num('seed', 1),
+      bands: q.has('bands') ? num('bands') : undefined,
+      persp: q.has('persp') ? num('persp') : undefined,
+      depthSpan: q.has('span') ? num('span') : undefined,
+      yFront: q.has('yf') ? num('yf') : undefined,
+      clouds: q.has('clouds') ? num('clouds') : undefined,
+      debug: q.get('debug') || undefined,
+    }, mk);
+    const img = new ImageData(res.data, res.width, res.height);
+    c.getContext('2d').putImageData(img, 0, 0);
+    const t2 = performance.now();
+    document.title = `done ${Math.round(t2 - t1)}ms`;
+    if (q.get('log') !== '0') log(`load ${Math.round(t1 - t0)}ms · paint ${Math.round(t2 - t1)}ms`);
+  } catch (e) {
+    log('ERROR ' + e.message + '\n' + e.stack);
+    throw e;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+* text=auto
+fonts/** linguist-vendored
+data/** linguist-generated
+*.png binary
+*.jpg binary
+*.woff2 binary
